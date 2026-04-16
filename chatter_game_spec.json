@@ -1,0 +1,255 @@
+{
+  "title": "CHATTER",
+  "former_title": "Secret Police",
+  "elevator_pitch": "CHATTER is a real-time text surveillance game about drowning in invasive, mostly useless chatter while trying to identify the few dangerous signals hidden inside it. The player works inside a morally deranged authoritarian monitoring system that rewards paranoia, speed, and false certainty.",
+  "high_concept": {
+    "core_fantasy": "Sit in front of a live state surveillance interface and make snap decisions about what deserves intervention before it disappears.",
+    "player_role": "A low-level analyst / operator inside an authoritarian internal security apparatus.",
+    "core_tension": "The player is forced to make detention decisions under time pressure using incomplete, ethically contaminated information.",
+    "why_it_works": [
+      "The player cannot meaningfully read everything, so attention becomes the scarce resource.",
+      "Most monitored chatter is banal, intimate, embarrassing, or morally indefensible to collect.",
+      "A tiny fraction contains real danger, coded behavior, or suspicious contextual shifts.",
+      "The system is disgusting, but not entirely delusional, which is what makes it believable."
+    ]
+  },
+  "tone": {
+    "overall": "Claustrophobic, invasive, petty, bureaucratic, ugly, occasionally absurd, and darkly funny.",
+    "aesthetic": [
+      "Cheap surveillance state software",
+      "Obsolete or ugly interface energy",
+      "Brittle system with too much power",
+      "Hostile data density",
+      "Bureaucratic confidence with shallow understanding"
+    ],
+    "moral_frame": "The surveillance is supposed to feel obviously ethically bankrupt. The player is not protecting society in a clean heroic sense; they are operating a machine that turns ordinary human mess into suspicion.",
+    "humor_style": [
+      "Dry and nasty",
+      "Petty specificity",
+      "False confidence",
+      "Domestic humiliation",
+      "Weirdly bureaucratic phrasing",
+      "Occasional surreal nonsense in the chatter pool"
+    ],
+    "guiding_principle": "Petty details, maximum confidence, zero understanding."
+  },
+  "themes": [
+    "Authoritarian obsession with total visibility",
+    "Manufacturing certainty out of noise",
+    "The state as a pervert engine",
+    "False positives as policy",
+    "Human pattern-matching and fake coherence",
+    "The seduction of the 1 percent hit that justifies the other 99 percent",
+    "Attention as a weaponized resource",
+    "Bureaucratic systems that are both stupid and dangerous"
+  ],
+  "gameplay": {
+    "primary_loop": [
+      "A current hot word is selected from a rotating pool.",
+      "Many simultaneous conversations scroll across the screen continuously.",
+      "Occurrences of the hot word are highlighted wherever they appear.",
+      "The player watches the stream, especially conversations containing the hot word.",
+      "The player clicks a conversation to isolate it; other chatter fades toward the background.",
+      "Before the selected conversation scrolls off-screen, the player decides whether to detain.",
+      "The player repeats this under constant pressure while new chatter continues to arrive."
+    ],
+    "win_state_philosophy": "The goal is not to catch everything. The goal is to catch enough of the right things to survive and satisfy the system.",
+    "failure_philosophy": "Missing some true threats should matter, but the game should not demand impossible perfection. It should feel oppressive, not random.",
+    "player_skill": [
+      "Rapid scanning",
+      "Context reading",
+      "Detecting phrasing changes",
+      "Tolerating ambiguity",
+      "Remembering patterns and speaker vibes",
+      "Managing attention under overload"
+    ]
+  },
+  "hot_word_system": {
+    "description": "There is a list of uncommon but innocuous words. One is hot at a time on a rotating basis because intelligence believes relevant chatter will cluster around it.",
+    "purpose": [
+      "Direct the player's attention without pretending they can process everything equally",
+      "Create visual anchors in a dense text field",
+      "Make state paranoia feel organized and arbitrary at the same time",
+      "Allow replayable rounds with changing lexical obsessions"
+    ],
+    "word_design_rules": [
+      "Uncommon but innocuous",
+      "Plausible in everyday chatter",
+      "Not too obviously themed",
+      "Able to sound literal, metaphorical, logistical, or suspicious depending on context"
+    ],
+    "example_hot_words": [
+      "culvert",
+      "latch",
+      "threshold",
+      "cinder",
+      "spigot"
+    ],
+    "design_note": "The state chooses what is hot, not the player. This makes the player participate in a moving obsession engine rather than a rational investigation."
+  },
+  "chatter_design": {
+    "core_rule": "Most chatter should be ordinary, invasive, useless, or pathetic. A small portion should contain meaningful signal hidden in similar language.",
+    "qualities": [
+      "Fast",
+      "Messy",
+      "Partially coherent",
+      "Highly specific",
+      "Context-rich but incomplete",
+      "Frequently more intimate than justified"
+    ],
+    "voice_target": "Less HBO, more autocorrect. The chatter should feel like texts, side conversations, petty complaints, logistical fragments, and slightly broken everyday language.",
+    "content_buckets": [
+      "Intimate domestic conflict",
+      "Grocery weirdness",
+      "Mundane domestic logistics",
+      "Sports enthusiasm",
+      "Meme nonsense",
+      "Punchier meme nonsense",
+      "Weewoo nonsense",
+      "Boring business chatter",
+      "Slightly drunk business chatter",
+      "Customer service complaints",
+      "Family logistics",
+      "Hobby obsession",
+      "Marketplace transactions",
+      "Hot-word-specific chatter packs"
+    ],
+    "signal_to_noise": {
+      "default": "Mostly noise",
+      "signal": "Rare but real",
+      "desired_effect": "The player should never fully trust the system, but also never feel safe dismissing it outright."
+    },
+    "examples_of_morally_repugnant_surveillance": [
+      "Toothbrush duration during marital arguments",
+      "Toilet flushes and fan sounds",
+      "Household purchases and delivery metadata",
+      "Domestic emotional summaries",
+      "Petty neighbor reports",
+      "Private text fragments and inferred behavior"
+    ]
+  },
+  "procedural_generation": {
+    "recommended_approach": "Hybrid: keep clean JSON chatter pools, then remix and corrupt them in JavaScript at runtime.",
+    "why_runtime_generation": [
+      "More variety from a smaller source pool",
+      "Can tune weirdness dynamically",
+      "Can bias corruption by category, tension, or hot word",
+      "Avoids storing a giant number of premade permutations"
+    ],
+    "host_donor_model": {
+      "description": "Pick a host line, pick a donor line, split the donor roughly in half, and insert one donor half into the host near the middle or at a clause boundary.",
+      "effect": "Because the beginning and ending of the host still feel related, the player's pattern-matching brain grants the corrupted message fake coherence."
+    },
+    "corruption_guidelines": [
+      "Preserve punctuation and general style of the host when possible",
+      "Clause-boundary splits feel eerie and intentional",
+      "Mid-thought splits feel glitchy or intercepted",
+      "Dynamic junk is good; authored suspicious lines should remain curated"
+    ],
+    "design_rule": "Generate junk dynamically, author signal deliberately."
+  },
+  "ui": {
+    "visual_concept": "An ugly, dense live-monitoring interface with many simultaneous horizontal text channels moving constantly.",
+    "inspiration": [
+      "Old HTML marquee energy",
+      "Cheap terminal software",
+      "Low-budget state surveillance dashboard",
+      "Airport board / ops center overload"
+    ],
+    "layout": {
+      "main_view": "Many stacked horizontal text lanes moving continuously across the screen.",
+      "conversation_behavior": "Multiple concurrent conversations are present at once; text is always in motion.",
+      "highlighting": "The current hot word is visually highlighted wherever it appears.",
+      "focus_state": "When the player clicks one conversation, other conversations mute/fade into a background-near color."
+    },
+    "interaction": {
+      "primary_actions": [
+        "Click a conversation to isolate it",
+        "Click detain before the conversation scrolls off"
+      ],
+      "secondary_actions_possible_later": [
+        "Monitor",
+        "Trace",
+        "Tag",
+        "Ignore"
+      ]
+    },
+    "motion": {
+      "constant": true,
+      "purpose": "Create pressure, enforce triage, and make attention feel costly.",
+      "note": "The motion should feel readable enough to play, but not comfortable."
+    },
+    "style_notes": [
+      "Black or very dark background",
+      "Muted text colors with occasional highlight color for hot words",
+      "Monospace or compressed system-like font",
+      "Severe information density",
+      "Slight lane-to-lane variation possible later",
+      "Should feel cheap and hostile rather than sleek"
+    ]
+  },
+  "mechanics": {
+    "detain_action": {
+      "description": "A quick irreversible choice made before the targeted conversation scrolls away.",
+      "feeling": "Bureaucratic violence under uncertainty."
+    },
+    "time_pressure": {
+      "description": "The player has limited time to inspect and act before the conversation is lost.",
+      "effect": "Forces snap judgments and ensures every act of attention neglects something else."
+    },
+    "ambiguity": {
+      "description": "The same hot word should appear in harmless, intimate, logistical, sarcastic, metaphorical, and dangerous contexts.",
+      "goal": "The player is not hunting the word itself, but the use of the word."
+    },
+    "pattern_learning": {
+      "description": "Repeated categories, recurring tones, and contextual shifts should help players build ugly heuristics.",
+      "examples": [
+        "A phrase that is harmless in domestic chatter may feel wrong in logistics chatter",
+        "A previously normal noun may become suspicious after recent arrests or public pressure",
+        "Context clusters matter more than single lines"
+      ]
+    }
+  },
+  "design_principles": [
+    "Do not make it about catching everything.",
+    "Do make attention the main limited resource.",
+    "Do make the surveillance feel invasive and unjustified.",
+    "Do hide real signal inside the same sludge as the useless chatter.",
+    "Do keep the system morally deranged and institutionally confident.",
+    "Do let the player feel the state is both stupid and dangerous.",
+    "Do let fake coherence do some of the content generation work.",
+    "Do keep the writing flatter and more text-like than prestige-TV dialogue."
+  ],
+  "player_experience_goals": [
+    "I cannot read all of this.",
+    "This system is disgusting.",
+    "That line was probably nothing.",
+    "What if it wasn't.",
+    "I only had time to look at one thing.",
+    "The opening and closing of that corrupted message made it feel meaningful even if it wasn't.",
+    "I don't trust the machine, but I also don't trust myself."
+  ],
+  "content_status": {
+    "existing_assets": {
+      "base_merged_chatter_entries": 180,
+      "expansion_entries": 175,
+      "hot_word_specific_packs_created": [
+        "culvert",
+        "latch",
+        "threshold",
+        "cinder",
+        "spigot"
+      ],
+      "entries_per_hot_word_pack": 50
+    },
+    "notes": "The current content base is solid for prototyping, especially with JS remixing. Continued expansion will help reduce repetition during sustained play."
+  },
+  "naming": {
+    "current_title": "CHATTER",
+    "reason_it_fits": [
+      "Short and ugly in a good way",
+      "Focuses on the material being monitored rather than the institution",
+      "Feels cold, everyday, and ominous without overselling"
+    ]
+  }
+}
