@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHATTER Prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>CHATTER // INTERNAL MONITORING CONSOLE</h1>
+        <p>Petty details, maximum confidence, zero understanding.</p>
+      </div>
+      <div class="stats">
+        <div><span class="label">ACTIVE HOT WORD</span><span id="hotWord" class="hotword-pill">culvert</span></div>
+        <div><span class="label">ROUND</span><span id="round">1</span></div>
+        <div><span class="label">DETAINS</span><span id="detains">0</span></div>
+        <div><span class="label">TRUE POS</span><span id="truePos">0</span></div>
+        <div><span class="label">FALSE POS</span><span id="falsePos">0</span></div>
+        <div><span class="label">MISSED</span><span id="missed">0</span></div>
+      </div>
+    </header>
+
+    <main>
+      <aside class="side-panel">
+        <h2>Selected Conversation</h2>
+        <div id="selectedInfo" class="selected-info">No conversation isolated.</div>
+        <div class="actions">
+          <button id="detainBtn" disabled>DETAIN</button>
+          <button id="releaseBtn" disabled>RELEASE FOCUS</button>
+        </div>
+        <p class="hint">Click a moving line to isolate it. Detain before it scrolls off-screen.</p>
+      </aside>
+
+      <section class="monitor-wrap">
+        <div id="monitor"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Prototype loop: rotating hot word, moving chatter lanes, click-to-focus, detain under pressure,
+        host/donor corruption for junk, authored rare signal lines.
+      </p>
+    </footer>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+:root {
+  --bg: #070908;
+  --panel: #0e1210;
+  --lane: #0b0f0d;
+  --text: #9aa59d;
+  --muted: #506058;
+  --hot: #ffd44f;
+  --signal: #f19a60;
+  --alert: #ff5f5f;
+  --ok: #6ad189;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: #111713;
+  border-bottom: 1px solid #1c251f;
+}
+
+.title-wrap h1 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.title-wrap p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 0.25rem 1rem;
+  min-width: 420px;
+}
+
+.stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border-bottom: 1px dashed #263128;
+  padding-bottom: 0.1rem;
+}
+
+.label {
+  color: #728177;
+  font-size: 0.65rem;
+}
+
+.hotword-pill {
+  color: var(--hot);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: calc(100vh - 132px);
+}
+
+.side-panel {
+  border-right: 1px solid #1b241d;
+  padding: 1rem;
+  background: var(--panel);
+}
+
+.side-panel h2 {
+  margin-top: 0;
+  font-size: 0.9rem;
+}
+
+.selected-info {
+  min-height: 180px;
+  border: 1px solid #27352c;
+  background: #0a0d0b;
+  padding: 0.7rem;
+  line-height: 1.4;
+  font-size: 0.82rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+button {
+  background: #16231b;
+  color: #c7d2cb;
+  border: 1px solid #324438;
+  padding: 0.45rem 0.7rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.monitor-wrap {
+  padding: 0.7rem;
+}
+
+#monitor {
+  position: relative;
+  height: 100%;
+  border: 1px solid #1e2721;
+  background: linear-gradient(180deg, #0b100c, #070a08);
+  overflow: hidden;
+}
+
+.lane-message {
+  position: absolute;
+  white-space: nowrap;
+  color: var(--text);
+  background: rgba(24, 32, 28, 0.65);
+  border: 1px solid #212b24;
+  border-radius: 2px;
+  padding: 0.2rem 0.5rem;
+  line-height: 1.2;
+  user-select: none;
+}
+
+.lane-message .hot {
+  color: var(--hot);
+  background: rgba(255, 212, 79, 0.09);
+}
+
+.lane-message.signal {
+  border-color: #5a3a27;
+}
+
+.lane-message.focused {
+  color: #d7e2db;
+  border-color: #537460;
+  box-shadow: 0 0 0 1px #537460;
+}
+
+.dimmed .lane-message:not(.focused) {
+  opacity: 0.15;
+}
+
+footer {
+  border-top: 1px solid #1c251f;
+  color: #6e7e73;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.hint {
+  color: #67756d;
+  font-size: 0.72rem;
+}
