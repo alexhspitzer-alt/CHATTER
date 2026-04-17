@@ -29,6 +29,9 @@ h1 { margin: 0 0 0.25rem; font-size: 1rem; color: #dde5e7; }
   display: grid;
   grid-template-columns: repeat(2, minmax(126px, 1fr));
   gap: 0.35rem 0.85rem;
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #25343c;
 }
 .status-grid span { display: block; font-size: 0.74rem; color: var(--dim); }
 .status-grid strong { color: #e7eef0; font-size: 1rem; }
@@ -39,7 +42,10 @@ main {
   min-height: calc(100vh - 84px);
 }
 
-.stream-wrap { overflow: hidden; padding: 0.6rem; }
+.stream-wrap {
+  overflow: hidden;
+  padding: 0.6rem;
+}
 .stream {
   display: flex;
   flex-direction: column;
@@ -135,24 +141,44 @@ button:not(:disabled):hover { background: #1b2a36; }
 
   h1 { font-size: 0.92rem; }
   .subtitle { font-size: 0.8rem; }
-  .status-grid {
-    width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  main {
+    display: block;
+    min-height: auto;
   }
 
-  .stream-wrap { padding: 0.35rem; }
+  .stream-wrap {
+    height: calc(100vh - 74px);
+    padding: 0.35rem;
+    overflow: hidden;
+  }
+  .stream {
+    height: 100%;
+    justify-content: flex-start;
+  }
+
   .lane { padding: 0.58rem; }
   .lane-meta { font-size: 0.74rem; }
   .lane-text { font-size: 1rem; }
 
   .decision-panel {
-    position: sticky;
+    position: fixed;
+    left: 0;
+    right: 0;
     bottom: 0;
-    z-index: 10;
+    z-index: 20;
     background: #111821;
-    max-height: 48vh;
+    border-top: 1px solid #2f3f49;
+    max-height: 62vh;
+    transform: translateY(103%);
+    transition: transform 200ms ease;
     overflow: auto;
     padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  body.decision-open .decision-panel {
+    transform: translateY(0%);
   }
 
   .selected-text {
@@ -165,10 +191,15 @@ button:not(:disabled):hover { background: #1b2a36; }
     top: 0;
     background: #111821;
     padding-bottom: 0.35rem;
+    z-index: 1;
   }
 
   button {
     min-height: 48px;
     font-size: 0.98rem;
+  }
+
+  #log {
+    max-height: 18vh;
   }
 }

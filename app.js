@@ -13,6 +13,7 @@ const selectedTextEl = document.getElementById('selectedText');
 const detainBtn = document.getElementById('detainBtn');
 const releaseBtn = document.getElementById('releaseBtn');
 const logEl = document.getElementById('log');
+const mobileQuery = window.matchMedia('(max-width: 700px)');
 
 const SUPPORTED_HOT_WORDS = ['culvert', 'latch', 'threshold', 'cinder', 'spigot'];
 const FALSE_POSITIVE_RATE = 0.9;
@@ -107,6 +108,7 @@ function renderLaneText(text) {
 function clearSelection() {
   state.selectedLaneId = null;
   document.body.classList.remove('focus-mode');
+  document.body.classList.remove('decision-open');
   for (const laneObj of state.lanes.values()) {
     laneObj.el.classList.remove('selected');
   }
@@ -123,6 +125,9 @@ function selectLane(id) {
   }
   state.selectedLaneId = id;
   document.body.classList.add('focus-mode');
+  if (mobileQuery.matches) {
+    document.body.classList.add('decision-open');
+  }
   for (const [laneId, laneObj] of state.lanes) {
     laneObj.el.classList.toggle('selected', laneId === id);
   }
@@ -206,7 +211,7 @@ function spawnLane() {
     }
   });
 
-  streamEl.prepend(laneEl);
+  streamEl.append(laneEl);
   state.lanes.set(id, { id, text: laneData.text, signal: laneData.signal, createdAt: Date.now(), el: laneEl, meta });
   renderMetric();
 }
@@ -256,6 +261,14 @@ async function bootstrap() {
 
 detainBtn.addEventListener('click', () => resolveLane('detain'));
 releaseBtn.addEventListener('click', () => resolveLane('release'));
+
+mobileQuery.addEventListener('change', (event) => {
+  if (!event.matches) {
+    document.body.classList.remove('decision-open');
+  } else if (state.selectedLaneId) {
+    document.body.classList.add('decision-open');
+  }
+});
 
 bootstrap().catch((error) => {
   addAudit(`BOOT FAILURE: ${error.message}`);
