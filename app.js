@@ -23,10 +23,11 @@ const state = {
   currentHotWord: '',
   chatterBase: [],
   chatterPacks: {},
-  lanes: new Map(),
+  slots: [],
   selectedLaneId: null,
   detained: 0,
   missedSignal: 0,
+  spawnCursor: 0,
 };
 
 const trueSignalTemplates = [
@@ -41,8 +42,12 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function activePressure() {
+  return state.slots.filter((slot) => slot.active).length;
+}
+
 function renderMetric() {
-  pressureEl.textContent = String(state.lanes.size);
+  pressureEl.textContent = String(activePressure());
   detainedCountEl.textContent = String(state.detained);
   missedCountEl.textContent = String(state.missedSignal);
 }
@@ -109,8 +114,8 @@ function clearSelection() {
   state.selectedLaneId = null;
   document.body.classList.remove('focus-mode');
   document.body.classList.remove('decision-open');
-  for (const laneObj of state.lanes.values()) {
-    laneObj.el.classList.remove('selected');
+  for (const slot of state.slots) {
+    slot.el.classList.remove('selected');
   }
   selectedMetaEl.textContent = 'No channel selected. Click a moving lane to isolate and review.';
   selectedTextEl.textContent = '--';
@@ -118,23 +123,37 @@ function clearSelection() {
   releaseBtn.disabled = true;
 }
 
-function selectLane(id) {
-  const lane = state.lanes.get(id);
-  if (!lane) {
+function selectLane(laneId) {
+  const slot = state.slots.find((lane) => lane.activeId === laneId);
+  if (!slot || !slot.active) {
     return;
   }
-  state.selectedLaneId = id;
+
+  state.selectedLaneId = laneId;
   document.body.classList.add('focus-mode');
   if (mobileQuery.matches) {
     document.body.classList.add('decision-open');
   }
-  for (const [laneId, laneObj] of state.lanes) {
-    laneObj.el.classList.toggle('selected', laneId === id);
+
+  for (const laneSlot of state.slots) {
+    laneSlot.el.classList.toggle('selected', laneSlot.activeId === laneId);
   }
-  selectedMetaEl.textContent = `${lane.meta} // case ambiguous // action required before timeout`;
-  selectedTextEl.innerHTML = renderLaneText(lane.text);
+
+  selectedMetaEl.textContent = `${slot.meta} // case ambiguous // action required before timeout`;
+  selectedTextEl.innerHTML = renderLaneText(slot.text);
   detainBtn.disabled = false;
   releaseBtn.disabled = false;
+}
+
+function markSlotInactive(slot) {
+  slot.active = false;
+  slot.activeId = null;
+  slot.text = '';
+  slot.signal = false;
+  slot.createdAt = 0;
+  slot.meta = 'channel idle';
+  slot.metaEl.textContent = slot.meta;
+  slot.textEl.innerHTML = '';
 }
 
 function resolveLane(action) {
@@ -142,77 +161,82 @@ function resolveLane(action) {
   if (!id) {
     return;
   }
-  const lane = state.lanes.get(id);
-  if (!lane) {
+
+  const slot = state.slots.find((lane) => lane.activeId === id);
+  if (!slot || !slot.active) {
     clearSelection();
     return;
   }
 
   if (action === 'detain') {
     state.detained += 1;
-    addAudit(`DETAINED ${lane.meta} // ${lane.signal ? 'possible operational lead' : 'likely hot-word noise'}`);
+    addAudit(`DETAINED ${slot.meta} // ${slot.signal ? 'possible operational lead' : 'likely hot-word noise'}`);
+  } else if (slot.signal) {
+    state.missedSignal += 1;
+    addAudit(`RELEASED ${slot.meta} // potential lead missed`);
   } else {
-    if (lane.signal) {
-      state.missedSignal += 1;
-      addAudit(`RELEASED ${lane.meta} // potential lead missed`);
-    } else {
-      addAudit(`RELEASED ${lane.meta} // chatter remains unverified`);
-    }
+    addAudit(`RELEASED ${slot.meta} // chatter remains unverified`);
   }
 
-  lane.el.remove();
-  state.lanes.delete(id);
+  markSlotInactive(slot);
   clearSelection();
   renderMetric();
 }
 
-function spawnLane() {
-  if (state.lanes.size >= MAX_LANES) {
-    const oldest = [...state.lanes.values()].sort((a, b) => a.createdAt - b.createdAt)[0];
-    if (oldest) {
-      if (oldest.id === state.selectedLaneId) {
-        addAudit(`MISSED ${oldest.meta} // conversation lost in queue overflow`);
-      }
-      if (oldest.signal) {
-        state.missedSignal += 1;
-      }
-      oldest.el.remove();
-      state.lanes.delete(oldest.id);
+function replaceAnimatedText(slot, html, durationSeconds, laneId) {
+  const newTextNode = slot.textEl.cloneNode(false);
+  newTextNode.innerHTML = html;
+  newTextNode.style.animationDuration = `${durationSeconds}s`;
+
+  newTextNode.addEventListener('animationend', () => {
+    if (!slot.active || slot.activeId !== laneId) {
+      return;
     }
-  }
 
-  const laneData = pickMessage();
-  const id = `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
-  const laneNumber = Math.floor(Math.random() * 9) + 1;
-  const meta = `CH-${laneNumber} / source=${Math.random() < 0.5 ? 'domestic scrape' : 'merchant log'} / confidence=${Math.floor(Math.random() * 44) + 51}%`;
-
-  const laneEl = laneTemplate.content.firstElementChild.cloneNode(true);
-  laneEl.dataset.id = id;
-  laneEl.querySelector('.lane-meta').textContent = meta;
-
-  const laneTextEl = laneEl.querySelector('.lane-text');
-  laneTextEl.innerHTML = renderLaneText(laneData.text);
-  laneTextEl.style.animationDuration = `${16 + Math.random() * 12}s`;
-
-  laneEl.addEventListener('click', () => selectLane(id));
-
-  laneTextEl.addEventListener('animationend', () => {
-    if (state.selectedLaneId === id) {
-      addAudit(`LOST ${meta} // lane scrolled off before decision`);
-      if (laneData.signal) {
+    if (state.selectedLaneId === laneId) {
+      addAudit(`LOST ${slot.meta} // lane scrolled off before decision`);
+      if (slot.signal) {
         state.missedSignal += 1;
       }
       clearSelection();
     }
-    if (state.lanes.has(id)) {
-      laneEl.remove();
-      state.lanes.delete(id);
-      renderMetric();
-    }
+
+    markSlotInactive(slot);
+    renderMetric();
   });
 
-  streamEl.append(laneEl);
-  state.lanes.set(id, { id, text: laneData.text, signal: laneData.signal, createdAt: Date.now(), el: laneEl, meta });
+  slot.textEl.replaceWith(newTextNode);
+  slot.textEl = newTextNode;
+}
+
+function spawnLane() {
+  const laneData = pickMessage();
+  const laneId = `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
+  const laneNumber = Math.floor(Math.random() * 9) + 1;
+  const meta = `CH-${laneNumber} / source=${Math.random() < 0.5 ? 'domestic scrape' : 'merchant log'} / confidence=${Math.floor(Math.random() * 44) + 51}%`;
+
+  const slot = state.slots[state.spawnCursor];
+  state.spawnCursor = (state.spawnCursor + 1) % state.slots.length;
+
+  if (slot.active) {
+    if (slot.activeId === state.selectedLaneId) {
+      addAudit(`MISSED ${slot.meta} // replaced by incoming queue`);
+      if (slot.signal) {
+        state.missedSignal += 1;
+      }
+      clearSelection();
+    }
+  }
+
+  slot.active = true;
+  slot.activeId = laneId;
+  slot.signal = laneData.signal;
+  slot.text = laneData.text;
+  slot.createdAt = Date.now();
+  slot.meta = meta;
+  slot.metaEl.textContent = meta;
+
+  replaceAnimatedText(slot, renderLaneText(laneData.text), 16 + Math.random() * 12, laneId);
   renderMetric();
 }
 
@@ -220,6 +244,36 @@ function rotateHotWord() {
   state.currentHotWord = SUPPORTED_HOT_WORDS[Math.floor(Math.random() * SUPPORTED_HOT_WORDS.length)];
   hotWordEl.textContent = state.currentHotWord;
   addAudit(`Priority lexeme rotated: ${state.currentHotWord}`);
+}
+
+function initSlots() {
+  for (let i = 0; i < MAX_LANES; i += 1) {
+    const laneEl = laneTemplate.content.firstElementChild.cloneNode(true);
+    const metaEl = laneEl.querySelector('.lane-meta');
+    const textEl = laneEl.querySelector('.lane-text');
+
+    metaEl.textContent = 'channel idle';
+    textEl.innerHTML = '';
+    laneEl.addEventListener('click', () => {
+      const slot = state.slots[i];
+      if (slot?.active && slot.activeId) {
+        selectLane(slot.activeId);
+      }
+    });
+
+    streamEl.append(laneEl);
+    state.slots.push({
+      el: laneEl,
+      metaEl,
+      textEl,
+      active: false,
+      activeId: null,
+      signal: false,
+      text: '',
+      createdAt: 0,
+      meta: 'channel idle',
+    });
+  }
 }
 
 async function loadJson(path) {
@@ -249,8 +303,10 @@ async function bootstrap() {
     spigot: spigotPack,
   };
 
+  initSlots();
   rotateHotWord();
   renderMetric();
+
   for (let i = 0; i < 6; i += 1) {
     spawnLane();
   }
