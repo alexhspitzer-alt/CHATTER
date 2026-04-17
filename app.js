@@ -1,6 +1,6 @@
 const HOT_WORD_INTERVAL_MS = 28000;
 const SPAWN_INTERVAL_MS = 1400;
-const MAX_LANES = 12;
+const MAX_LANES = 10;
 
 const streamEl = document.getElementById('stream');
 const laneTemplate = document.getElementById('laneTemplate');
@@ -251,7 +251,7 @@ async function bootstrap() {
 
   rotateHotWord();
   renderMetric();
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 6; i += 1) {
     spawnLane();
   }
 
