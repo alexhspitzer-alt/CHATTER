@@ -402,13 +402,19 @@ async function bootstrap() {
 detainBtn.addEventListener('click', () => resolveLane('detain'));
 releaseBtn.addEventListener('click', () => resolveLane('release'));
 
-mobileQuery.addEventListener('change', (event) => {
+const handleViewportChange = (event) => {
   if (!event.matches) {
     document.body.classList.remove('decision-open');
   } else if (state.selectedLaneId) {
     document.body.classList.add('decision-open');
   }
-});
+};
+
+if (typeof mobileQuery.addEventListener === 'function') {
+  mobileQuery.addEventListener('change', handleViewportChange);
+} else if (typeof mobileQuery.addListener === 'function') {
+  mobileQuery.addListener(handleViewportChange);
+}
 
 bootstrap().catch((error) => {
   addAudit(`BOOT FAILURE: ${error.message}`);
