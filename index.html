@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHATTER Prototype</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>CHATTER // INTERNAL REVIEW BUILD</h1>
+        <p class="subtitle">Petty details. Maximum confidence. Zero understanding.</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="stream-wrap">
+        <div id="stream" class="stream" aria-live="polite"></div>
+      </section>
+
+      <aside class="decision-panel" id="decisionPanel">
+        <h2>Decision Console</h2>
+        <p id="selectedMeta" class="muted">No channel selected. Click a moving lane to isolate and review.</p>
+        <div class="buttons">
+          <button id="detainBtn" disabled>Detain</button>
+          <button id="releaseBtn" disabled>Release</button>
+        </div>
+        <div id="selectedText" class="selected-text">--</div>
+        <h3>Audit Log</h3>
+        <ul id="log"></ul>
+
+        <div class="status-grid">
+          <div><span>Hot word</span><strong id="hotWord">...</strong></div>
+          <div><span>Queue pressure</span><strong id="pressure">0</strong></div>
+          <div><span>Detained</span><strong id="detainedCount">0</strong></div>
+          <div><span>Signals missed</span><strong id="missedCount">0</strong></div>
+        </div>
+      </aside>
+    </main>
+
+    <template id="laneTemplate">
+      <article class="lane">
+        <div class="lane-meta"></div>
+        <div class="lane-track">
+          <span class="lane-text"></span>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
