@@ -384,11 +384,12 @@ async function loadJson(path) {
 }
 
 async function bootstrap() {
-  const basePromise = loadJson('./secret_police_chatter_merged.json');
-  const chatterPackEntries = await Promise.all(
-    Object.entries(HOT_WORD_PACKS).map(async ([hotWord, path]) => [hotWord, await loadJson(path)])
-  );
-  const baseData = await basePromise;
+  const [baseData, chatterPackEntries] = await Promise.all([
+    loadJson('./secret_police_chatter_merged.json'),
+    Promise.all(
+      Object.entries(HOT_WORD_PACKS).map(async ([hotWord, path]) => [hotWord, await loadJson(path)])
+    ),
+  ]);
 
   state.chatterBase = baseData.all;
   state.chatterPacks = Object.fromEntries(chatterPackEntries);
