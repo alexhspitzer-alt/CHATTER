@@ -1,6 +1,7 @@
 const HOT_WORD_INTERVAL_MS = 28000;
 const SPAWN_INTERVAL_MS = 1400;
 const MAX_LANES = 10;
+const MIN_ACTIVE_LANES = 6;
 
 const streamEl = document.getElementById('stream');
 const laneTemplate = document.getElementById('laneTemplate');
@@ -363,6 +364,9 @@ function activateSlot(slot, laneData) {
 }
 
 function spawnLane() {
+  if (!state.currentHotWord) {
+    rotateHotWord();
+  }
   const laneData = pickMessage();
   const slot = pickAvailableSlot();
   activateSlot(slot, laneData);
@@ -370,9 +374,28 @@ function spawnLane() {
 }
 
 function rotateHotWord() {
+  if (!SUPPORTED_HOT_WORDS.length) {
+    throw new Error('No hot words are configured for rotation');
+  }
   state.currentHotWord = SUPPORTED_HOT_WORDS[Math.floor(Math.random() * SUPPORTED_HOT_WORDS.length)];
   hotWordEl.textContent = state.currentHotWord;
   addAudit(`Priority lexeme rotated: ${state.currentHotWord}`);
+}
+
+function withLoopGuard(task, loopName) {
+  return () => {
+    try {
+      task();
+    } catch (error) {
+      addAudit(`${loopName.toUpperCase()} LOOP ERROR: ${error.message}`);
+    }
+  };
+}
+
+function maintainLanePressure() {
+  while (state.lanes.size < MIN_ACTIVE_LANES) {
+    spawnLane();
+  }
 }
 
 async function loadJson(path) {
@@ -398,12 +421,13 @@ async function bootstrap() {
   rotateHotWord();
   renderMetric();
 
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < MIN_ACTIVE_LANES; i += 1) {
     spawnLane();
   }
 
-  setInterval(spawnLane, SPAWN_INTERVAL_MS);
-  setInterval(rotateHotWord, HOT_WORD_INTERVAL_MS);
+  setInterval(withLoopGuard(spawnLane, 'spawn'), SPAWN_INTERVAL_MS);
+  setInterval(withLoopGuard(rotateHotWord, 'hotword'), HOT_WORD_INTERVAL_MS);
+  setInterval(withLoopGuard(maintainLanePressure, 'pressure'), 2000);
 }
 
 detainBtn.addEventListener('click', () => resolveLane('detain'));
