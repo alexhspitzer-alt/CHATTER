@@ -341,6 +341,7 @@ function activateSlot(slot, laneData) {
   const id = `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
   const laneNumber = Math.floor(Math.random() * 9) + 1;
   const meta = `CH-${laneNumber} / source=${Math.random() < 0.5 ? 'domestic scrape' : 'merchant log'} / confidence=${Math.floor(Math.random() * 44) + 51}%`;
+  const renderedText = renderLaneText(laneData.text);
 
   slot.classList.add('active');
   slot.classList.remove('slot-empty');
@@ -349,7 +350,7 @@ function activateSlot(slot, laneData) {
 
   const textEl = slot.querySelector('.lane-text');
   textEl.style.animation = 'none';
-  textEl.innerHTML = renderLaneText(laneData.text);
+  textEl.innerHTML = renderedText;
   void textEl.offsetWidth;
   textEl.style.animation = `slide-left ${16 + Math.random() * 12}s linear forwards`;
 
@@ -382,18 +383,8 @@ function rotateHotWord() {
   addAudit(`Priority lexeme rotated: ${state.currentHotWord}`);
 }
 
-function withLoopGuard(task, loopName) {
-  return () => {
-    try {
-      task();
-    } catch (error) {
-      addAudit(`${loopName.toUpperCase()} LOOP ERROR: ${error.message}`);
-    }
-  };
-}
-
 function maintainLanePressure() {
-  while (state.lanes.size < MIN_ACTIVE_LANES) {
+  if (state.lanes.size < MIN_ACTIVE_LANES) {
     spawnLane();
   }
 }
@@ -425,9 +416,9 @@ async function bootstrap() {
     spawnLane();
   }
 
-  setInterval(withLoopGuard(spawnLane, 'spawn'), SPAWN_INTERVAL_MS);
-  setInterval(withLoopGuard(rotateHotWord, 'hotword'), HOT_WORD_INTERVAL_MS);
-  setInterval(withLoopGuard(maintainLanePressure, 'pressure'), 2000);
+  setInterval(spawnLane, SPAWN_INTERVAL_MS);
+  setInterval(rotateHotWord, HOT_WORD_INTERVAL_MS);
+  setInterval(maintainLanePressure, 2000);
 }
 
 detainBtn.addEventListener('click', () => resolveLane('detain'));
