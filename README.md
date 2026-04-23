@@ -5,7 +5,7 @@ A text game where you must protect order from alleged dissidents.
 This repository now includes a playable web prototype that demonstrates the game spec's core loop:
 
 - Continuous multi-lane scrolling chatter under time pressure
-- Rotating state-assigned hot words limited to the five tuned false-positive sets (culvert, latch, threshold, cinder, spigot)
+- Rotating state-assigned hot words across all bundled false-positive chatter packs (acorn, awning, cinder, cobblestone, culvert, expat, latch, rookie, spigot, threshold, wick)
 - Click-to-isolate focus mode that mutes other lanes
 - Detain / Release decisions before lines disappear
 - Hybrid authored + runtime-corrupted chatter generation
