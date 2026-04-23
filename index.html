@@ -7,6 +7,26 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div id="briefingOverlay" class="briefing-overlay" role="dialog" aria-modal="true" aria-labelledby="briefingTitle">
+      <section class="briefing-card">
+        <h2 id="briefingTitle">Headquarters Briefing</h2>
+        <p>
+          Congratulations, Junior Analyst 061, on your promotion.
+        </p>
+        <p>
+          In your new role, you will review live streams of intercepted communications flagged by the algorithm as
+          potentially relevant to dissident activity. Select any active source to isolate it for closer review, then
+          choose whether to dispatch a tactical team to detain the suspect or return to the incoming queue.
+        </p>
+        <p>
+          To support your evaluation, Headquarters has implemented a prioritization system for chatter containing words
+          currently assessed as operationally significant. While actionable intelligence may emerge from any source,
+          communications containing these hot words require additional scrutiny. Exercise sound judgment.
+        </p>
+        <button id="startGameBtn" type="button">Acknowledge &amp; Begin Monitoring</button>
+      </section>
+    </div>
+
     <header class="topbar">
       <div>
         <h1>CHATTER // INTERNAL REVIEW BUILD</h1>
