@@ -14,8 +14,23 @@ const detainBtn = document.getElementById('detainBtn');
 const releaseBtn = document.getElementById('releaseBtn');
 const logEl = document.getElementById('log');
 const mobileQuery = window.matchMedia('(max-width: 700px)');
+const briefingOverlayEl = document.getElementById('briefingOverlay');
+const startGameBtn = document.getElementById('startGameBtn');
 
-const SUPPORTED_HOT_WORDS = ['culvert', 'latch', 'threshold', 'cinder', 'spigot'];
+const HOT_WORD_PACKS = {
+  acorn: './acorn_chatter_50.json',
+  awning: './awning_chatter_50.json',
+  cinder: './cinder_chatter_50.json',
+  cobblestone: './cobblestone_chatter_50.json',
+  culvert: './culvert_chatter_50.json',
+  expat: './expat_chatter_50.json',
+  latch: './latch_chatter_50.json',
+  rookie: './rookie_chatter_50.json',
+  spigot: './spigot_chatter_50.json',
+  threshold: './threshold_chatter_50.json',
+  wick: './wick_chatter_50.json',
+};
+const SUPPORTED_HOT_WORDS = Object.keys(HOT_WORD_PACKS);
 const HOT_CHATTER_RATE = 0.34;
 const HOT_SIGNAL_RATE = 0.045;
 const COLD_SIGNAL_RATE = 0.008;
@@ -134,10 +149,12 @@ function withHotWord(text, hotWord) {
 }
 
 function pickNoiseMessage(forceHotWord = false) {
-  const hotWordPack = state.chatterPacks[state.currentHotWord] ?? [];
-  const source = Math.random() < 0.65 && hotWordPack.length ? hotWordPack : state.chatterBase;
-  const host = source[Math.floor(Math.random() * source.length)] ?? 'nothing to report';
-  const donor = state.chatterBase[Math.floor(Math.random() * state.chatterBase.length)] ?? host;
+  const hotWordPack = Array.isArray(state.chatterPacks[state.currentHotWord]) ? state.chatterPacks[state.currentHotWord] : [];
+  const basePool = Array.isArray(state.chatterBase) ? state.chatterBase : [];
+  const source = Math.random() < 0.65 && hotWordPack.length ? hotWordPack : basePool;
+  const hostPool = source.length ? source : basePool;
+  const host = hostPool[Math.floor(Math.random() * hostPool.length)] ?? 'nothing to report';
+  const donor = basePool[Math.floor(Math.random() * basePool.length)] ?? host;
   const mutated = maybeCorruptLine(host, donor);
 
   return forceHotWord ? withHotWord(mutated, state.currentHotWord) : mutated;
@@ -186,8 +203,9 @@ function pickMessage() {
 }
 
 function renderLaneText(text) {
+  const safeText = typeof text === 'string' ? text : String(text ?? '');
   const pattern = new RegExp(`(${escapeRegExp(state.currentHotWord)})`, 'ig');
-  return text.replace(pattern, '<span class="hot">$1</span>');
+  return safeText.replace(pattern, '<span class="hot">$1</span>');
 }
 
 function clearSelection() {
@@ -210,9 +228,7 @@ function selectLane(id) {
   }
   state.selectedLaneId = id;
   document.body.classList.add('focus-mode');
-  if (mobileQuery.matches) {
-    document.body.classList.add('decision-open');
-  }
+  document.body.classList.add('decision-open');
 
   for (const laneObj of state.lanes.values()) {
     laneObj.slot.classList.toggle('selected', laneObj.id === id);
@@ -325,6 +341,7 @@ function activateSlot(slot, laneData) {
   const id = `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
   const laneNumber = Math.floor(Math.random() * 9) + 1;
   const meta = `CH-${laneNumber} / source=${Math.random() < 0.5 ? 'domestic scrape' : 'merchant log'} / confidence=${Math.floor(Math.random() * 44) + 51}%`;
+  const renderedText = renderLaneText(laneData.text);
 
   slot.classList.add('active');
   slot.classList.remove('slot-empty');
@@ -333,7 +350,7 @@ function activateSlot(slot, laneData) {
 
   const textEl = slot.querySelector('.lane-text');
   textEl.style.animation = 'none';
-  textEl.innerHTML = renderLaneText(laneData.text);
+  textEl.innerHTML = renderedText;
   void textEl.offsetWidth;
   textEl.style.animation = `slide-left ${16 + Math.random() * 12}s linear forwards`;
 
@@ -348,6 +365,9 @@ function activateSlot(slot, laneData) {
 }
 
 function spawnLane() {
+  if (!state.currentHotWord) {
+    rotateHotWord();
+  }
   const laneData = pickMessage();
   const slot = pickAvailableSlot();
   activateSlot(slot, laneData);
@@ -355,9 +375,19 @@ function spawnLane() {
 }
 
 function rotateHotWord() {
+  if (!SUPPORTED_HOT_WORDS.length) {
+    throw new Error('No hot words are configured for rotation');
+  }
   state.currentHotWord = SUPPORTED_HOT_WORDS[Math.floor(Math.random() * SUPPORTED_HOT_WORDS.length)];
   hotWordEl.textContent = state.currentHotWord;
   addAudit(`Priority lexeme rotated: ${state.currentHotWord}`);
+}
+
+function normalizeChatterList(data) {
+  return (Array.isArray(data) ? data : [])
+    .filter((entry) => typeof entry === 'string')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
 async function loadJson(path) {
@@ -369,23 +399,17 @@ async function loadJson(path) {
 }
 
 async function bootstrap() {
-  const [baseData, culvertPack, latchPack, thresholdPack, cinderPack, spigotPack] = await Promise.all([
+  const [baseData, chatterPackEntries] = await Promise.all([
     loadJson('./secret_police_chatter_merged.json'),
-    loadJson('./culvert_chatter_50.json'),
-    loadJson('./latch_chatter_50.json'),
-    loadJson('./threshold_chatter_50.json'),
-    loadJson('./cinder_chatter_50.json'),
-    loadJson('./spigot_chatter_50.json'),
+    Promise.all(
+      Object.entries(HOT_WORD_PACKS).map(async ([hotWord, path]) => [hotWord, await loadJson(path)])
+    ),
   ]);
 
-  state.chatterBase = baseData.all;
-  state.chatterPacks = {
-    culvert: culvertPack,
-    latch: latchPack,
-    threshold: thresholdPack,
-    cinder: cinderPack,
-    spigot: spigotPack,
-  };
+  state.chatterBase = normalizeChatterList(baseData.all);
+  state.chatterPacks = Object.fromEntries(
+    chatterPackEntries.map(([hotWord, pack]) => [hotWord, normalizeChatterList(pack)])
+  );
 
   buildSlots();
   rotateHotWord();
@@ -416,7 +440,15 @@ if (typeof mobileQuery.addEventListener === 'function') {
   mobileQuery.addListener(handleViewportChange);
 }
 
-bootstrap().catch((error) => {
-  addAudit(`BOOT FAILURE: ${error.message}`);
-  selectedMetaEl.textContent = 'Prototype failed to load content files.';
-});
+function startGame() {
+  briefingOverlayEl.remove();
+  document.body.classList.remove('pre-briefing');
+  startGameBtn.removeEventListener('click', startGame);
+  bootstrap().catch((error) => {
+    addAudit(`BOOT FAILURE: ${error.message}`);
+    selectedMetaEl.textContent = 'Prototype failed to load content files.';
+  });
+}
+
+document.body.classList.add('pre-briefing');
+startGameBtn.addEventListener('click', startGame);
