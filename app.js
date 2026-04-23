@@ -1,6 +1,7 @@
 const HOT_WORD_INTERVAL_MS = 28000;
 const SPAWN_INTERVAL_MS = 1400;
 const MAX_LANES = 10;
+const MIN_ACTIVE_LANES = 6;
 
 const streamEl = document.getElementById('stream');
 const laneTemplate = document.getElementById('laneTemplate');
@@ -14,8 +15,23 @@ const detainBtn = document.getElementById('detainBtn');
 const releaseBtn = document.getElementById('releaseBtn');
 const logEl = document.getElementById('log');
 const mobileQuery = window.matchMedia('(max-width: 700px)');
+const briefingOverlayEl = document.getElementById('briefingOverlay');
+const startGameBtn = document.getElementById('startGameBtn');
 
-const SUPPORTED_HOT_WORDS = ['culvert', 'latch', 'threshold', 'cinder', 'spigot'];
+const HOT_WORD_PACKS = {
+  acorn: './acorn_chatter_50.json',
+  awning: './awning_chatter_50.json',
+  cinder: './cinder_chatter_50.json',
+  cobblestone: './cobblestone_chatter_50.json',
+  culvert: './culvert_chatter_50.json',
+  expat: './expat_chatter_50.json',
+  latch: './latch_chatter_50.json',
+  rookie: './rookie_chatter_50.json',
+  spigot: './spigot_chatter_50.json',
+  threshold: './threshold_chatter_50.json',
+  wick: './wick_chatter_50.json',
+};
+const SUPPORTED_HOT_WORDS = Object.keys(HOT_WORD_PACKS);
 const HOT_CHATTER_RATE = 0.34;
 const HOT_SIGNAL_RATE = 0.045;
 const COLD_SIGNAL_RATE = 0.008;
@@ -239,6 +255,9 @@ function removeLaneById(id, reason) {
   if (!lane) {
     return;
   }
+  if (lane.timeoutId) {
+    clearTimeout(lane.timeoutId);
+  }
   if (lane.signal && (reason === 'evicted' || reason === 'timeout')) {
     state.missedSignal += 1;
   }
@@ -280,7 +299,6 @@ function resolveLane(action) {
 function buildSlots() {
   for (let i = 0; i < MAX_LANES; i += 1) {
     const slot = laneTemplate.content.firstElementChild.cloneNode(true);
-    const textEl = slot.querySelector('.lane-text');
 
     slot.classList.add('slot-empty');
     slot.dataset.slotIndex = String(i);
@@ -290,14 +308,6 @@ function buildSlots() {
       const laneId = slot.dataset.id;
       if (laneId) {
         selectLane(laneId);
-      }
-    });
-
-    textEl.addEventListener('animationend', () => {
-      const laneId = slot.dataset.id;
-      if (laneId && state.lanes.has(laneId)) {
-        removeLaneById(laneId, 'timeout');
-        renderMetric();
       }
     });
 
@@ -325,6 +335,7 @@ function activateSlot(slot, laneData) {
   const id = `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`;
   const laneNumber = Math.floor(Math.random() * 9) + 1;
   const meta = `CH-${laneNumber} / source=${Math.random() < 0.5 ? 'domestic scrape' : 'merchant log'} / confidence=${Math.floor(Math.random() * 44) + 51}%`;
+  const renderedText = renderLaneText(laneData.text);
 
   slot.classList.add('active');
   slot.classList.remove('slot-empty');
@@ -332,10 +343,18 @@ function activateSlot(slot, laneData) {
   slot.querySelector('.lane-meta').textContent = meta;
 
   const textEl = slot.querySelector('.lane-text');
+  const durationMs = (16 + Math.random() * 12) * 1000;
   textEl.style.animation = 'none';
-  textEl.innerHTML = renderLaneText(laneData.text);
+  textEl.innerHTML = renderedText;
   void textEl.offsetWidth;
-  textEl.style.animation = `slide-left ${16 + Math.random() * 12}s linear forwards`;
+  textEl.style.animation = `slide-left ${durationMs / 1000}s linear forwards`;
+
+  const timeoutId = setTimeout(() => {
+    if (state.lanes.has(id)) {
+      removeLaneById(id, 'timeout');
+      renderMetric();
+    }
+  }, durationMs + 40);
 
   state.lanes.set(id, {
     id,
@@ -344,10 +363,14 @@ function activateSlot(slot, laneData) {
     signal: laneData.signal,
     createdAt: Date.now(),
     slot,
+    timeoutId,
   });
 }
 
 function spawnLane() {
+  if (!state.currentHotWord) {
+    rotateHotWord();
+  }
   const laneData = pickMessage();
   const slot = pickAvailableSlot();
   activateSlot(slot, laneData);
@@ -355,9 +378,18 @@ function spawnLane() {
 }
 
 function rotateHotWord() {
+  if (!SUPPORTED_HOT_WORDS.length) {
+    throw new Error('No hot words are configured for rotation');
+  }
   state.currentHotWord = SUPPORTED_HOT_WORDS[Math.floor(Math.random() * SUPPORTED_HOT_WORDS.length)];
   hotWordEl.textContent = state.currentHotWord;
   addAudit(`Priority lexeme rotated: ${state.currentHotWord}`);
+}
+
+function maintainLanePressure() {
+  if (state.lanes.size < MIN_ACTIVE_LANES) {
+    spawnLane();
+  }
 }
 
 async function loadJson(path) {
@@ -369,34 +401,27 @@ async function loadJson(path) {
 }
 
 async function bootstrap() {
-  const [baseData, culvertPack, latchPack, thresholdPack, cinderPack, spigotPack] = await Promise.all([
+  const [baseData, chatterPackEntries] = await Promise.all([
     loadJson('./secret_police_chatter_merged.json'),
-    loadJson('./culvert_chatter_50.json'),
-    loadJson('./latch_chatter_50.json'),
-    loadJson('./threshold_chatter_50.json'),
-    loadJson('./cinder_chatter_50.json'),
-    loadJson('./spigot_chatter_50.json'),
+    Promise.all(
+      Object.entries(HOT_WORD_PACKS).map(async ([hotWord, path]) => [hotWord, await loadJson(path)])
+    ),
   ]);
 
   state.chatterBase = baseData.all;
-  state.chatterPacks = {
-    culvert: culvertPack,
-    latch: latchPack,
-    threshold: thresholdPack,
-    cinder: cinderPack,
-    spigot: spigotPack,
-  };
+  state.chatterPacks = Object.fromEntries(chatterPackEntries);
 
   buildSlots();
   rotateHotWord();
   renderMetric();
 
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < MIN_ACTIVE_LANES; i += 1) {
     spawnLane();
   }
 
   setInterval(spawnLane, SPAWN_INTERVAL_MS);
   setInterval(rotateHotWord, HOT_WORD_INTERVAL_MS);
+  setInterval(maintainLanePressure, 2000);
 }
 
 detainBtn.addEventListener('click', () => resolveLane('detain'));
@@ -416,7 +441,15 @@ if (typeof mobileQuery.addEventListener === 'function') {
   mobileQuery.addListener(handleViewportChange);
 }
 
-bootstrap().catch((error) => {
-  addAudit(`BOOT FAILURE: ${error.message}`);
-  selectedMetaEl.textContent = 'Prototype failed to load content files.';
-});
+function startGame() {
+  briefingOverlayEl.remove();
+  document.body.classList.remove('pre-briefing');
+  startGameBtn.removeEventListener('click', startGame);
+  bootstrap().catch((error) => {
+    addAudit(`BOOT FAILURE: ${error.message}`);
+    selectedMetaEl.textContent = 'Prototype failed to load content files.';
+  });
+}
+
+document.body.classList.add('pre-briefing');
+startGameBtn.addEventListener('click', startGame);
