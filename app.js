@@ -83,6 +83,7 @@ const game = {
   selectedLaneId: null,
   detainedCount: 0,
   missedCount: 0,
+  started: false,
   timers: {
     spawnTimeout: null,
     hotWordInterval: null,
@@ -447,8 +448,21 @@ function onViewportChange(event) {
 }
 
 async function startGame() {
-  try {
+  if (game.started) return;
+  game.started = true;
+
+  if (dom.startBtn) {
     dom.startBtn.disabled = true;
+    dom.startBtn.removeEventListener('click', startGame);
+  }
+
+  if (dom.briefing) {
+    dom.briefing.remove();
+  }
+  document.body.classList.remove('pre-briefing');
+  appendAudit('Boot sequence started');
+
+  try {
     await loadChatterPools();
 
     seedSlots();
@@ -468,14 +482,15 @@ async function startGame() {
       }
     }, CONFIG.pressureCheckMs);
     queueSpawnLoop();
-
-    dom.briefing.remove();
-    document.body.classList.remove('pre-briefing');
-    dom.startBtn.removeEventListener('click', startGame);
   } catch (error) {
-    dom.startBtn.disabled = false;
+    game.started = false;
     appendAudit(`BOOT FAILURE: ${error.message}`);
     dom.selectedMeta.textContent = 'Prototype failed to load content files.';
+
+    if (dom.startBtn) {
+      dom.startBtn.disabled = false;
+      dom.startBtn.addEventListener('click', startGame);
+    }
   }
 }
 
