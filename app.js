@@ -80,6 +80,8 @@ const game = {
   hotPools: {},
   laneSlots: [],
   activeLanes: new Map(),
+  hotWordOrder: [],
+  hotWordIndex: 0,
   selectedLaneId: null,
   detainedCount: 0,
   missedCount: 0,
@@ -106,6 +108,15 @@ function randomInt(max) {
 function choose(list, fallback = '') {
   if (!Array.isArray(list) || list.length === 0) return fallback;
   return list[randomInt(list.length)] ?? fallback;
+}
+
+function shuffle(list) {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = randomInt(i + 1);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 function escapeRegExp(value) {
@@ -400,9 +411,17 @@ function spawnLane() {
 }
 
 function rotateHotWord() {
-  const words = Object.keys(CONFIG.hotWordFiles);
-  if (!words.length) throw new Error('No hot words configured');
-  game.currentHotWord = choose(words);
+  if (!game.hotWordOrder.length || game.hotWordIndex >= game.hotWordOrder.length) {
+    game.hotWordOrder = shuffle(Object.keys(CONFIG.hotWordFiles));
+    game.hotWordIndex = 0;
+  }
+
+  if (!game.hotWordOrder.length) {
+    throw new Error('No hot words configured');
+  }
+
+  game.currentHotWord = game.hotWordOrder[game.hotWordIndex];
+  game.hotWordIndex += 1;
   dom.hotWord.textContent = game.currentHotWord;
   appendAudit(`Priority lexeme rotated: ${game.currentHotWord}`);
 }
@@ -473,7 +492,13 @@ async function startGame() {
       spawnLane();
     }
 
-    game.timers.hotWordInterval = setInterval(rotateHotWord, CONFIG.hotWordIntervalMs);
+    game.timers.hotWordInterval = setInterval(() => {
+      try {
+        rotateHotWord();
+      } catch (error) {
+        appendAudit(`HOTWORD LOOP ERROR: ${error.message}`);
+      }
+    }, CONFIG.hotWordIntervalMs);
     game.timers.pressureInterval = setInterval(() => {
       try {
         maintainLanePressure();
