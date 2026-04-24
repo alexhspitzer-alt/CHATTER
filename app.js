@@ -1,12 +1,14 @@
 const CONFIG = {
   spawnIntervalMs: 1400,
   hotWordIntervalMs: 28000,
+  pressureCheckMs: 1200,
   maxLanes: 10,
   initialLanes: 6,
+  minActiveLanes: 6,
   rates: {
-    coldSignal: 0.008,
-    hotSignal: 0.045,
-    hotNoise: 0.34,
+    coldSignal: 0.0167,
+    hotSignal: 0.0833,
+    hotNoise: 0.54,
   },
   hotWordFiles: {
     acorn: './acorn_chatter_50.json',
@@ -84,6 +86,7 @@ const game = {
   timers: {
     spawnTimeout: null,
     hotWordInterval: null,
+    pressureInterval: null,
   },
 };
 
@@ -348,6 +351,16 @@ function generateLanePayload() {
   return { signal: false, text: generateNoiseLine(false) };
 }
 
+function maintainLanePressure() {
+  const deficit = CONFIG.minActiveLanes - game.activeLanes.size;
+  if (deficit <= 0) return;
+
+  const refillCount = Math.min(deficit, 2);
+  for (let i = 0; i < refillCount; i += 1) {
+    spawnLane();
+  }
+}
+
 function activateSlot(slot, payload) {
   const laneId = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
   const laneNumber = randomInt(9) + 1;
@@ -398,6 +411,8 @@ function queueSpawnLoop() {
   game.timers.spawnTimeout = setTimeout(() => {
     try {
       spawnLane();
+    } catch (error) {
+      appendAudit(`SPAWN LOOP ERROR: ${error.message}`);
     } finally {
       queueSpawnLoop();
     }
@@ -445,6 +460,13 @@ async function startGame() {
     }
 
     game.timers.hotWordInterval = setInterval(rotateHotWord, CONFIG.hotWordIntervalMs);
+    game.timers.pressureInterval = setInterval(() => {
+      try {
+        maintainLanePressure();
+      } catch (error) {
+        appendAudit(`PRESSURE LOOP ERROR: ${error.message}`);
+      }
+    }, CONFIG.pressureCheckMs);
     queueSpawnLoop();
 
     dom.briefing.remove();
